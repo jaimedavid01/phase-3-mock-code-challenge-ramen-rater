@@ -1,78 +1,72 @@
-// write your code here
-//See all ramen in the div #ramen-menu
-//Display image using img tag inside #ramen-menu
-//click on the image to display #ramen-detail
-//Update using the #ramen-rating form
+///////////////////RAMEN RATER REVIEW
+///////////Save variables
+const ramenMenu = document.querySelector('div#ramen-menu');
+const ramenDetail = document.querySelector('div#ramen-detail');
+const ramenImg = document.querySelector('img.detail-image');
+const h2 = document.querySelector('h2.name');
+const h3 = document.querySelector('h3.restaurant');
+const form = document.querySelector('form#ramen-rating');
+const rating = form.querySelector('input[name="rating"]');
+const comment = form.querySelector('textarea[name="comment"]');
 
-let imgDiv = document.querySelector('div#ramen-menu')
-
-let infoDiv = document.querySelector('div#ramen-detail')
-let img = document.querySelector('img.detail-image')
-let name = document.querySelector('h2.name')
-let restaurant = document.querySelector('h3.restaurant')
-
-let form = document.querySelector('form#ramen-rating')
-let rating = form.querySelector('input[name="rating"]')
-let comment = form.querySelector('textarea[name="comment"]')
-
-
-fetch('http://localhost:3000/ramens')
-    .then(r => r.json())
-    .then((ramenList) => {
-
-        ramenList.forEach((ramenObj => {
-            renderRamen(ramenObj)
-           
-        }))
-
+//////////////////////////Render ramen 
+    fetch('http://localhost:3000/ramens')
+    .then(res => res.json())
+    .then(arrOfRamen => {
+        arrOfRamen.forEach(ramen => renderRamen(ramen))
     })
 
-function renderRamen(ramenObj){
-    const img = document.createElement('img')
-    img.className = 'ramen-pic'
-    img.src = ramenObj
-
-  
-
-    ramenImg.addEventListener('click', (event) =>{
-        console.log(ramenObj.id)
-
-        fetch(`http://localhost:3000/ramens/${ramenObj.id}`,{
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(ramenObj)
+    function renderRamen(ramen){
+    const img = document.createElement('img');
+    img.className = 'ramen-pic';
+    img.src = ramen.image;
+    img.dataset.id = ramen.id;
+    ramenMenu.append(img);
+////////////////////////////////click to render
+    img.addEventListener('click', function(e){      
+        fetch(`http://localhost:3000/ramens/${ramen.id}`)
+        .then(res => res.json())
+        .then(data => {
+            rating.value = data.rating;
+            comment.textContent = data.comment;
         })
-            .then(r => r.json())
-            .then((ramen) => {
-                img.src = ramen.image
-                name.textContent = ramen.name
-                restaurant.textContent = ramen.restaurant
-                
+        ramenImg.src = ramen.image;
+        ramenImg.alt = ramen.name;
+        h2.textContent = ramen.name;
+        h3.textContent = ramen.restaurant;
+        form.dataset.id = ramen.id;
+        
+    })
+}
 
-            })
+/////////////////////////// FORM
 
+    form.addEventListener('submit', function(e){
+        e.preventDefault();
+        let newRating = e.target.rating.value;
+        let newComment = e.target.comment.value;
+        let newRamen = {
+            id: e.target.dataset.id,
+            rating: newRating,
+            comment: newComment
+        }
+        updateDB(newRamen);
+        e.target.reset();
     })
 
-    
 
-
-    // <!-- Ramen Details -->
-    // <div id="ramen-detail">
-    //   <img class="detail-image" src=${ramenObj.image} alt=${ramenObj.name} />
-    //   <h2 class="name">${ramenObj.name}</h2>
-    //   <h3 class="restaurant">${ramenObj.restaurant}</h3>
-    // </div>
-    
-    // <!-- Rating Form -->
-    // <form id="ramen-rating" data-id="${ramenObj.id}">
-    //   <label for="rating">Rating: </label>
-    //   <input type="text" name="rating" id="rating" value="${ramenObj.rating}" />
-    //   <label for="comment">Comment:  </label>
-    //   <textarea name="comment" id="comment">${ramenObj.comment}</textarea>
-    //   <input type="submit" value="Update" />
-    // </form>
-    
-
+function updateDB(newRamen){
+    fetch(`http://localhost:3000/ramens/${newRamen.id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newRamen),
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data)
+        rating.value = newRamen.rating;
+        comment.textContent = newRamen.comment;
+    })
 }
